@@ -1,2 +1,2 @@
 # montecarlo
-A class-based Monte Carlo simulator
+A class-based Monte Carlo simulator for options
