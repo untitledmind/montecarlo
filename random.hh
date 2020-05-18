@@ -1,5 +1,5 @@
-#ifndef RANDOM_H
-#define RANDOM_H
+#ifndef RANDOM_HH
+#define RANDOM_HH
 
 #include <cmath>
 #include <string>
@@ -10,8 +10,6 @@ template <typename Type> class Antithetic;
 
 template <typename Type = double>
 class RandomGenerator {
-    private:
-        // static const unsigned int seed = 1757;
     public:
         RandomGenerator() {}
         virtual ~RandomGenerator() {}
@@ -48,7 +46,7 @@ class Antithetic: public RandomGenerator<Type> {
     private:
         Type epsilon;       // store the last random number generated
         bool odd_even;
-        std::string signature = "Antithetic generator";
+        const std::string signature = "Antithetic generator";
     public:
         Antithetic() {}
         virtual ~Antithetic() {}

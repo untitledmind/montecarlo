@@ -1,8 +1,10 @@
-#ifndef OPTION_H
-#define OPTION_H
+#ifndef OPTION_HH
+#define OPTION_HH
 
 #include <cmath>
 #include <algorithm>
+
+#include "volatility.hh"
 
 template <typename Type> class Option;
 template <typename Type> class VanillaOption;
@@ -11,15 +13,18 @@ template <typename Type> class DoubleDigital;
 template <typename Type = double>
 class Option {
     private:
-        Type spot;
-        Type strike;
+        const Type spot;
+        const Type strike;
         const Type expiry;
         Type rate;
         Type vol;
+        const VolatilityFunction<Type>* vol_func;
         const char its_type;
+        void copy(const Option<Type>& rhs);
     public:
         Option();
         Option(const Type& _spot, const Type& _strike, const Type& _expiry, const Type& _rate, const Type& _vol, char& _its_type);
+        Option(const Type& _spot, const Type& _strike, const Type& _expiry, const Type& _rate, const VolatilityFunction<Type>& _vol, char& _its_type);
         Option(const Option& rhs);
         virtual ~Option();
         Type& operator= (const Option& rhs);
@@ -31,6 +36,7 @@ class Option {
         Type get_expiry() const;
         Type get_rate() const;
         Type get_vol() const;
+        const VolatilityFunction<Type>* get_vol_func() {return vol_func;}
         char get_its_type() const;
 };
 
@@ -39,6 +45,7 @@ class VanillaOption: public Option<Type> {
     public:
         VanillaOption();
         VanillaOption(const Type& _spot, const Type& _strike, const Type& _expiry, const Type& _rate, const Type& _vol, char& _its_type);
+        VanillaOption(const Type& _spot, const Type& _strike, const Type& _expiry, const Type& _rate, const VolatilityFunction<Type>& _vol, char& _its_type);
         VanillaOption(const Option<Type>& rhs);
         virtual ~VanillaOption();
         virtual Type operator() (Type& spot) const;
@@ -49,6 +56,7 @@ class DoubleDigital: public Option<Type> {
     public:
         DoubleDigital();
         DoubleDigital(const Type& _spot, const Type& _strike, const Type& _expiry, const Type& _rate, const Type& _vol, char& _its_type);
+        DoubleDigital(const Type& _spot, const Type& _strike, const Type& _expiry, const Type& _rate, const VolatilityFunction<Type>& _vol, char& _its_type);
         DoubleDigital(const Option<Type>& rhs);
         virtual ~DoubleDigital();
         virtual Type operator() (Type& spot) const;
@@ -60,6 +68,10 @@ Option<Type>::Option() {}
 template <typename Type>
 Option<Type>::Option(const Type& _spot, const Type& _strike, const Type& _expiry, const Type& _rate, const Type& _vol, char& _its_type):
     spot(_spot), strike(_strike), expiry(_expiry), rate(_rate), vol(_vol), its_type(_its_type) {}
+
+template <typename Type>
+Option<Type>::Option(const Type& _spot, const Type& _strike, const Type& _expiry, const Type& _rate, const VolatilityFunction<Type>& _vol_func, char& _its_type):
+    spot(_spot), strike(_strike), expiry(_expiry), rate(_rate), vol_func(&_vol_func), its_type(_its_type) {}
 
 template <typename Type>
 Option<Type>::Option(const Option& rhs): spot(rhs.spot), strike(rhs.strike), expiry(rhs.expiry), rate(rhs.rate), vol(rhs.vol), its_type(rhs.its_type) {}
@@ -123,6 +135,10 @@ VanillaOption<Type>::VanillaOption(const Type& _spot, const Type& _strike, const
     Option<Type>::Option(_spot, _strike, _expiry, _rate, _vol, _its_type) {}
 
 template <typename Type>
+VanillaOption<Type>::VanillaOption(const Type& _spot, const Type& _strike, const Type& _expiry, const Type& _rate, const VolatilityFunction<Type>& _vol_func, char& _its_type):
+    Option<Type>::Option(_spot, _strike, _expiry, _rate, _vol_func, _its_type) {}
+
+template <typename Type>
 VanillaOption<Type>::VanillaOption(const Option<Type>& rhs): Option<Type>::Option(rhs) {}
 
 template <typename Type>
@@ -147,6 +163,10 @@ DoubleDigital<Type>::DoubleDigital(): Option<Type>::Option() {}
 template <typename Type>
 DoubleDigital<Type>::DoubleDigital(const Type& _spot, const Type& _strike, const Type& _expiry, const Type& _rate, const Type& _vol, char& _its_type):
     Option<Type>::Option(_spot, _strike, _expiry, _rate, _vol, _its_type) {}
+
+template <typename Type>
+DoubleDigital<Type>::DoubleDigital(const Type& _spot, const Type& _strike, const Type& _expiry, const Type& _rate, const VolatilityFunction<Type>& _vol_func, char& _its_type):
+    Option<Type>::Option(_spot, _strike, _expiry, _rate, _vol_func, _its_type) {}
 
 template <typename Type>
 DoubleDigital<Type>::DoubleDigital(const Option<Type>& rhs): Option<Type>::Option(rhs) {}
