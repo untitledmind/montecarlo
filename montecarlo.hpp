@@ -1,13 +1,13 @@
-#ifndef MONTECARLO_HH
-#define MONTECARLO_HH
+#ifndef MONTECARLO_HPP
+#define MONTECARLO_HPP
 
 #include <iostream>
 #include <iomanip>
 #include <vector>
 #include <string>
 
-#include "random.hh"
-#include "option.hh"
+#include "random.hpp"
+#include "option.hpp"
 
 template <typename Type> class Simulator;
 

@@ -1,5 +1,5 @@
-#ifndef VOLATILITY_HH
-#define VOLATILITY_HH
+#ifndef VOLATILITY_HPP
+#define VOLATILITY_HPP
 
 #include <vector>
 #include <utility>

@@ -1,10 +1,10 @@
-#ifndef OPTION_HH
-#define OPTION_HH
+#ifndef OPTION_HPP
+#define OPTION_HPP
 
 #include <cmath>
 #include <algorithm>
 
-#include "volatility.hh"
+#include "volatility.hpp"
 
 template <typename Type> class Option;
 template <typename Type> class VanillaOption;

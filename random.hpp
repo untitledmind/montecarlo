@@ -1,5 +1,5 @@
-#ifndef RANDOM_HH
-#define RANDOM_HH
+#ifndef RANDOM_HPP
+#define RANDOM_HPP
 
 #include <cmath>
 #include <string>
