@@ -1,15 +1,14 @@
 #ifndef MONTECARLO_HPP
 #define MONTECARLO_HPP
 
+template <typename Type> class Simulator;
+
+#include "random.hpp"
+#include "../Option/option.hpp"
 #include <iostream>
 #include <iomanip>
 #include <vector>
 #include <string>
-
-#include "random.hpp"
-#include "option.hpp"
-
-template <typename Type> class Simulator;
 
 template <typename Type = double>
 class Simulator {
@@ -28,12 +27,12 @@ class Simulator {
         RandomGenerator<Type>* random;
     public:
         Simulator();
-        Simulator(Option<Type>& rhs, RandomGenerator<Type>& _random, std::vector<unsigned long>& _num_paths, unsigned int& _iters, unsigned int& _seed);
+        Simulator(Option<Type>& rhs, RandomGenerator<Type>& random_, std::vector<unsigned long>& num_paths_, unsigned int& _iters, unsigned int& _seed);
         virtual ~Simulator();
         void black_scholes();
-        std::vector<Type> monte_carlo(unsigned long& _num_paths) const;
+        std::vector<Type> monte_carlo(unsigned long& num_paths_) const;
         void run_monte_carlo();
-        std::vector<Type> monte_carlo_var_vol(unsigned long& _num_paths) const;
+        std::vector<Type> monte_carlo_var_vol(unsigned long& num_paths_) const;
         void run_monte_carlo_var_vol();
         void print() const;
 };
@@ -42,14 +41,14 @@ template <typename Type>
 Simulator<Type>::Simulator() {}
 
 template <typename Type>
-Simulator<Type>::Simulator(Option<Type>& _option, RandomGenerator<Type>& _random, std::vector<unsigned long>& _num_paths, unsigned int& _iters, unsigned int& _seed):
-    option(&_option), random(&_random), num_paths(_num_paths), iters(_iters), seed(_seed) {
+Simulator<Type>::Simulator(Option<Type>& _option, RandomGenerator<Type>& random_, std::vector<unsigned long>& num_paths_, unsigned int& _iters, unsigned int& _seed):
+    option(&_option), random(&random_), num_paths(num_paths_), iters(_iters), seed(_seed) {
         srand(seed);
     }
 
 // template <typename Type>
-// Simulator<Type>::Simulator(Option<Type>& _option, StepwiseVolatility<Type>& _vol_func, RandomGenerator<Type>& _random, std::vector<unsigned long>& _num_paths, unsigned int& _iters, unsigned int& _seed):
-//     option(&_option), vol_func(&_vol_func), random(&_random), num_paths(_num_paths), iters(_iters), seed(_seed) {
+// Simulator<Type>::Simulator(Option<Type>& _option, StepwiseVolatility<Type>& _vol_func, RandomGenerator<Type>& random_, std::vector<unsigned long>& num_paths_, unsigned int& _iters, unsigned int& _seed):
+//     option(&_option), vol_func(&_vol_func), random(&random_), num_paths(num_paths_), iters(_iters), seed(_seed) {
 //         srand(seed);
 //     }
 
@@ -57,7 +56,7 @@ template <typename Type>
 Simulator<Type>::~Simulator() {}
 
 template <typename Type>
-std::vector<Type> Simulator<Type>::monte_carlo(unsigned long& _num_paths) const {
+std::vector<Type> Simulator<Type>::monte_carlo(unsigned long& num_paths_) const {
     Type variance = option->get_vol() * option->get_vol() * option->get_expiry();
     Type root_variance = sqrt(variance);
     Type moved_spot = option->get_spot() * exp(option->get_rate() * option->get_expiry() - .5*variance);
@@ -71,7 +70,7 @@ std::vector<Type> Simulator<Type>::monte_carlo(unsigned long& _num_paths) const 
     Type stdev;
     Type sterr;
 
-    for (unsigned long i=0; i < _num_paths; ++i) {
+    for (unsigned long i=0; i < num_paths_; ++i) {
         root_variance *= factor;
         if (root_variance > 1.1 * base_root_variance)
             root_variance = base_root_variance;
@@ -86,11 +85,11 @@ std::vector<Type> Simulator<Type>::monte_carlo(unsigned long& _num_paths) const 
         psum2 += payoff*payoff;
     }
     
-    Type mean = running_sum / _num_paths;
+    Type mean = running_sum / num_paths_;
     mean *= exp(-option->get_rate() * option->get_expiry());
-    stdev = sqrt((exp(-2.*option->get_rate() * option->get_expiry())/(_num_paths-1))*
-        (psum2 - (psum1*psum1)/(_num_paths) ));
-    sterr = stdev/sqrt(_num_paths);
+    stdev = sqrt((exp(-2.*option->get_rate() * option->get_expiry())/(num_paths_-1))*
+        (psum2 - (psum1*psum1)/(num_paths_) ));
+    sterr = stdev/sqrt(num_paths_);
 
     // pass statistics of the monte carlo simulation to the caller
     std::vector<Type> result = {mean, stdev, sterr};
@@ -142,7 +141,7 @@ void Simulator<Type>::run_monte_carlo() {
 }
 
 template <typename Type>
-std::vector<Type> Simulator<Type>::monte_carlo_var_vol(unsigned long& _num_paths) const {
+std::vector<Type> Simulator<Type>::monte_carlo_var_vol(unsigned long& num_paths_) const {
     Type mean;
     Type running_sum;
     Type psum1;
@@ -155,7 +154,7 @@ std::vector<Type> Simulator<Type>::monte_carlo_var_vol(unsigned long& _num_paths
     std::vector<Type> vol_vec = option->get_vol_func()->get_vol_vec();
     int steps = option->get_vol_func()->get_steps();
 
-    for (unsigned long i=0; i < _num_paths; ++i) {
+    for (unsigned long i=0; i < num_paths_; ++i) {
         Type this_spot = option->get_spot();
         for (int i=0; i < steps-1; ++i) {
             Type dt = dt_vec[i];
@@ -180,17 +179,16 @@ std::vector<Type> Simulator<Type>::monte_carlo_var_vol(unsigned long& _num_paths
         psum2 += payoff*payoff;
     }
     
-    mean = running_sum / _num_paths;
+    mean = running_sum / num_paths_;
     mean *= exp(-option->get_rate() * option->get_expiry());
-    stdev = sqrt((exp(-2.*option->get_rate() * option->get_expiry())/(_num_paths-1))*
-        (psum2 - (psum1*psum1)/(_num_paths) ));
-    sterr = stdev/sqrt(_num_paths);
+    stdev = sqrt((exp(-2.*option->get_rate() * option->get_expiry())/(num_paths_-1))*
+        (psum2 - (psum1*psum1)/(num_paths_) ));
+    sterr = stdev/sqrt(num_paths_);
     
     // pass statistics of the monte carlo simulation to the caller
     std::vector<Type> result = {mean, stdev, sterr};
     return result;
 }
-
 
 template <typename Type>
 void Simulator<Type>::run_monte_carlo_var_vol() {

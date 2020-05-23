@@ -1,12 +1,12 @@
 #ifndef RANDOM_HPP
 #define RANDOM_HPP
 
-#include <cmath>
-#include <string>
-
 template <typename Type> class RandomGenerator;
 template <typename Type> class BoxMuller;
 template <typename Type> class Antithetic;
+
+#include <cmath>
+#include <string>
 
 template <typename Type = double>
 class RandomGenerator {
