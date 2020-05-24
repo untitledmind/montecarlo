@@ -3,7 +3,6 @@
 
 #include <cmath>
 #include <algorithm>
-
 #include "volatility.hpp"
 
 template <typename Type> class Option;
@@ -17,7 +16,8 @@ class Option {
         const Type spot;
         const Type strike;
         const Type expiry;
-        const Type rate;
+        const Type dividend;
+        Type rate;
         Type vol;
         Type price;
         VolatilityFunction<Type>* vol_func;
@@ -26,20 +26,22 @@ class Option {
         void copy(const Option<Type>& rhs);
     public:
         Option();
-        Option(const Type& _spot, const Type& _strike, const Type& _expiry, const Type& _rate, Type& _vol, char& _its_type, char& _its_style);
-        Option(const Type& _spot, const Type& _strike, const Type& _expiry, const Type& _rate, VolatilityFunction<Type>& _vol, char& _its_type, char& _its_style);
+        Option(const Type& spot_, const Type& strike_, const Type& expiry_, const Type& rate_, const Type& vol_, const char& its_type_, const char& its_style_, const Type& dividend_);
+        Option(const Type& spot_, const Type& strike_, const Type& expiry_, const Type& rate_, VolatilityFunction<Type>& vol_, const char& its_type_, const char& its_style_, const Type& dividend_);
         Option(const Option& rhs);
         virtual ~Option();
         Type& operator= (const Option& rhs);
         virtual Type operator()(Type& spot) const = 0;
 
-        void set_vol(Type& _vol);
+        void set_vol(Type& vol_);
+        void set_price(Type& price_);
         const Type& get_spot() const;
         const Type& get_strike() const;
         const Type& get_expiry() const;
+        const Type& get_dividend() const;
         const Type& get_rate() const;
         const Type& get_vol() const;
-        VolatilityFunction<Type>* get_vol_func();
+        VolatilityFunction<Type>& get_vol_func() const;
         const char& get_its_type() const;
         const char& get_its_style() const;
 };
@@ -48,8 +50,8 @@ template <typename Type = double>
 class VanillaOption: public Option<Type> {
     public:
         VanillaOption();
-        VanillaOption(const Type& _spot, const Type& _strike, const Type& _expiry, const Type& _rate, Type& _vol, char& _its_type, char& _its_style);
-        VanillaOption(const Type& _spot, const Type& _strike, const Type& _expiry, const Type& _rate, VolatilityFunction<Type>& _vol, char& _its_type, char& _its_style);
+        VanillaOption(const Type& spot_, const Type& strike_, const Type& expiry_, const Type& rate_, const Type& vol_, const char& its_type_, const char& its_style_, const Type& dividend_ = 0);
+        VanillaOption(const Type& spot_, const Type& strike_, const Type& expiry_, const Type& rate_, VolatilityFunction<Type>& vol_func_, const char& its_type_, const char& its_style_, const Type& dividend_ = 0);
         VanillaOption(const Option<Type>& rhs);
         virtual ~VanillaOption();
         virtual Type operator() (Type& spot) const;
@@ -58,38 +60,48 @@ class VanillaOption: public Option<Type> {
 template <typename Type = double>
 class DoubleDigital: public Option<Type> {
     private:
-        Type strike2;
+        const Type strike2;
     public:
         DoubleDigital();
-        DoubleDigital(const Type& _spot, const Type& _strike, const Type& _strike2, const Type& _expiry, const Type& _rate, Type& _vol, char& _its_type, char& _its_style);
-        DoubleDigital(const Type& _spot, const Type& _strike, const Type& _strike2, const Type& _expiry, const Type& _rate, VolatilityFunction<Type>& _vol, char& _its_type, char& _its_style);
+        DoubleDigital(const Type& spot_, const Type& strike_, const Type& strike2_, const Type& expiry_, const Type& rate_, const Type& vol_, const char& its_type_, const char& its_style_, const Type& dividend_ = 0);
+        DoubleDigital(const Type& spot_, const Type& strike_, const Type& strike2_, const Type& expiry_, const Type& rate_, VolatilityFunction<Type>& vol_func_, const char& its_type_, const char& its_style_, const Type& dividend_ = 0);
         DoubleDigital(const Option<Type>& rhs);
         virtual ~DoubleDigital();
         virtual Type operator() (Type& spot) const;
-        Type get_strike2() const {return strike2;}
+        const Type& get_strike2() const;
 };
 
 template <typename Type = double>
 class SquareRootPayoff: public Option<Type> {
     public:
         SquareRootPayoff();
-        SquareRootPayoff(const Type& _spot, const Type& _strike, const Type& _expiry, const Type& _rate, Type& _vol, char& _its_type, char& _its_style);
-        SquareRootPayoff(const Type& _spot, const Type& _strike, const Type& _expiry, const Type& _rate, VolatilityFunction<Type>& _vol, char& _its_type, char& _its_style);
+        SquareRootPayoff(const Type& spot_, const Type& strike_, const Type& expiry_, const Type& rate_, const Type& vol_, const char& its_type_, const char& its_style_, const Type& dividend_ = 0);
+        SquareRootPayoff(const Type& spot_, const Type& strike_, const Type& expiry_, const Type& rate_, VolatilityFunction<Type>& vol_func_, const char& its_type_, const char& its_style_, const Type& dividend_ = 0);
         SquareRootPayoff(const Option<Type>& rhs);
         virtual ~SquareRootPayoff();
         virtual Type operator() (Type& spot) const;
 };
 
 template <typename Type>
+void Option<Type>::copy(const Option<Type>& rhs) {
+    spot = rhs.spot;
+    strike = rhs.strike;
+    expiry = rhs.expiry;
+    rate = rhs.rate;
+    vol = rhs.vol;
+    its_type = rhs.its_type;
+}
+
+template <typename Type>
 Option<Type>::Option() {}
 
 template <typename Type>
-Option<Type>::Option(const Type& _spot, const Type& _strike, const Type& _expiry, const Type& _rate, Type& _vol, char& _its_type, char& _its_style):
-    spot(_spot), strike(_strike), expiry(_expiry), rate(_rate), vol(_vol), its_type(_its_type), its_style(_its_style) {}
+Option<Type>::Option(const Type& spot_, const Type& strike_, const Type& expiry_, const Type& rate_, const Type& vol_, const char& its_type_, const char& its_style_, const Type& dividend_):
+    spot(spot_), strike(strike_), expiry(expiry_), rate(rate_), vol(vol_), its_type(its_type_), its_style(its_style_), dividend(dividend_) {}
 
 template <typename Type>
-Option<Type>::Option(const Type& _spot, const Type& _strike, const Type& _expiry, const Type& _rate, VolatilityFunction<Type>& _vol_func, char& _its_type, char& _its_style):
-    spot(_spot), strike(_strike), expiry(_expiry), rate(_rate), vol_func(&_vol_func), its_type(_its_type), its_style(_its_style) {}
+Option<Type>::Option(const Type& spot_, const Type& strike_, const Type& expiry_, const Type& rate_, VolatilityFunction<Type>& _vol_func, const char& its_type_, const char& its_style_, const Type& dividend_):
+    spot(spot_), strike(strike_), expiry(expiry_), rate(rate_), vol_func(&_vol_func), its_type(its_type_), its_style(its_style_), dividend(dividend_) {}
 
 template <typename Type>
 Option<Type>::Option(const Option& rhs): spot(rhs.spot), strike(rhs.strike), expiry(rhs.expiry), rate(rhs.rate), vol(rhs.vol), its_type(rhs.its_type), its_style(rhs.its_style) {}
@@ -99,20 +111,19 @@ Option<Type>::~Option() {}
 
 template <typename Type>
 Type& Option<Type>::operator= (const Option& rhs) {
-    if (this != &rhs) {
-        spot = rhs.spot;
-        strike = rhs.strike;
-        expiry = rhs.expiry;
-        rate = rhs.rate;
-        vol = rhs.vol;
-        its_type = rhs.its_type;
-    }
+    if (this != &rhs)
+        copy(rhs);
     return *this;
 }
 
 template <typename Type>
-void Option<Type>::set_vol(Type& _vol) {
-    vol = _vol;
+void Option<Type>::set_vol(Type& vol_) {
+    vol = vol_;
+}
+
+template <typename Type>
+void Option<Type>::set_price(Type& price_) {
+    price = price_;
 }
 
 template <typename Type>
@@ -131,6 +142,11 @@ const Type& Option<Type>::get_expiry() const {
 }
 
 template <typename Type>
+const Type& Option<Type>::get_dividend() const {
+    return dividend;
+}
+
+template <typename Type>
 const Type& Option<Type>::get_rate() const {
     return rate;
 }
@@ -141,8 +157,8 @@ const Type& Option<Type>::get_vol() const {
 }
 
 template <typename Type>
-VolatilityFunction<Type>* Option<Type>::get_vol_func() {
-    return vol_func;
+VolatilityFunction<Type>& Option<Type>::get_vol_func() const {
+    return *vol_func;
 }
 
 template <typename Type>
@@ -159,12 +175,12 @@ template <typename Type>
 VanillaOption<Type>::VanillaOption(): Option<Type>::Option() {}
 
 template <typename Type>
-VanillaOption<Type>::VanillaOption(const Type& _spot, const Type& _strike, const Type& _expiry, const Type& _rate, Type& _vol, char& _its_type, char& _its_style):
-    Option<Type>::Option(_spot, _strike, _expiry, _rate, _vol, _its_type, _its_style) {}
+VanillaOption<Type>::VanillaOption(const Type& spot_, const Type& strike_, const Type& expiry_, const Type& rate_, const Type& vol_, const char& its_type_, const char& its_style_, const Type& dividend_):
+    Option<Type>::Option(spot_, strike_, expiry_, rate_, vol_, its_type_, its_style_, dividend_) {}
 
 template <typename Type>
-VanillaOption<Type>::VanillaOption(const Type& _spot, const Type& _strike, const Type& _expiry, const Type& _rate, VolatilityFunction<Type>& _vol_func, char& _its_type, char& _its_style):
-    Option<Type>::Option(_spot, _strike, _expiry, _rate, _vol_func, _its_type, _its_style) {}
+VanillaOption<Type>::VanillaOption(const Type& spot_, const Type& strike_, const Type& expiry_, const Type& rate_, VolatilityFunction<Type>& _vol_func, const char& its_type_, const char& its_style_, const Type& dividend_):
+    Option<Type>::Option(spot_, strike_, expiry_, rate_, _vol_func, its_type_, its_style_, dividend_) {}
 
 template <typename Type>
 VanillaOption<Type>::VanillaOption(const Option<Type>& rhs): Option<Type>::Option(rhs) {}
@@ -189,12 +205,12 @@ template <typename Type>
 DoubleDigital<Type>::DoubleDigital(): Option<Type>::Option() {}
 
 template <typename Type>
-DoubleDigital<Type>::DoubleDigital(const Type& _spot, const Type& _strike, const Type& _strike2, const Type& _expiry, const Type& _rate, Type& _vol, char& _its_type, char& _its_style/*, const Type& _strike2*/):
-    Option<Type>::Option(_spot, _strike, _expiry, _rate, _vol, _its_type, _its_style), strike2(_strike2) {}
+DoubleDigital<Type>::DoubleDigital(const Type& spot_, const Type& strike_, const Type& strike2_, const Type& expiry_, const Type& rate_, const Type& vol_, const char& its_type_, const char& its_style_, const Type& dividend_):
+    Option<Type>::Option(spot_, strike_, expiry_, rate_, vol_, its_type_, its_style_, dividend_), strike2(strike2_) {}
 
 template <typename Type>
-DoubleDigital<Type>::DoubleDigital(const Type& _spot, const Type& _strike, const Type& _strike2, const Type& _expiry, const Type& _rate, VolatilityFunction<Type>& _vol_func, char& _its_type, char& _its_style/*, const Type& _strike2*/):
-    Option<Type>::Option(_spot, _strike, _expiry, _rate, _vol_func, _its_type, _its_style), strike2(_strike2) {}
+DoubleDigital<Type>::DoubleDigital(const Type& spot_, const Type& strike_, const Type& strike2_, const Type& expiry_, const Type& rate_, VolatilityFunction<Type>& _vol_func, const char& its_type_, const char& its_style_, const Type& dividend_):
+    Option<Type>::Option(spot_, strike_, expiry_, rate_, _vol_func, its_type_, its_style_, dividend_), strike2(strike2_) {}
 
 template <typename Type>
 DoubleDigital<Type>::DoubleDigital(const Option<Type>& rhs): Option<Type>::Option(rhs) {}
@@ -206,39 +222,40 @@ template <typename Type>
 Type DoubleDigital<Type>::operator()(Type& spot) const {
     // functor returns payoff based on option type
     switch (this->get_its_type()) {
-        case 'c':
+        case 'p': {
             if (spot > this->get_strike() && spot < this->get_strike2())
                 return std::max(spot - this->get_strike(), 0.);
             else if (spot > this->get_strike2())
                 return this->get_strike2();
             return Type(0);
-        case 'p':
+        }
+        case 'c': {
             if (spot < this->get_strike())
                 return std::max(this->get_strike() - spot, 0.);
             else if (spot < this->get_strike2())
                 return this->get_strike2();
             return Type(0);
+        }
         default:
             throw("Unknown option type");
     };
+}
 
-    // if (spot <= this->get_strike())
-    //     return 0.;
-    // else if (spot >= this->get_strike2())
-    //     return 0.;
-    // return 1.;
+template <typename Type>
+const Type& DoubleDigital<Type>::get_strike2() const {
+    return strike2;
 }
 
 template <typename Type>
 SquareRootPayoff<Type>::SquareRootPayoff(): Option<Type>::Option() {}
 
 template <typename Type>
-SquareRootPayoff<Type>::SquareRootPayoff(const Type& _spot, const Type& _strike, const Type& _expiry, const Type& _rate, Type& _vol, char& _its_type, char& _its_style):
-    Option<Type>::Option(_spot, _strike, _expiry, _rate, _vol, _its_type, _its_style) {}
+SquareRootPayoff<Type>::SquareRootPayoff(const Type& spot_, const Type& strike_, const Type& expiry_, const Type& rate_, const Type& vol_, const char& its_type_, const char& its_style_, const Type& dividend_):
+    Option<Type>::Option(spot_, strike_, expiry_, rate_, vol_, its_type_, its_style_, dividend_) {}
 
 template <typename Type>
-SquareRootPayoff<Type>::SquareRootPayoff(const Type& _spot, const Type& _strike, const Type& _expiry, const Type& _rate, VolatilityFunction<Type>& _vol_func, char& _its_type, char& _its_style):
-    Option<Type>::Option(_spot, _strike, _expiry, _rate, _vol_func, _its_type, _its_style) {}
+SquareRootPayoff<Type>::SquareRootPayoff(const Type& spot_, const Type& strike_, const Type& expiry_, const Type& rate_, VolatilityFunction<Type>& _vol_func, const char& its_type_, const char& its_style_, const Type& dividend_):
+    Option<Type>::Option(spot_, strike_, expiry_, rate_, _vol_func, its_type_, its_style_, dividend_) {}
 
 template <typename Type>
 SquareRootPayoff<Type>::SquareRootPayoff(const Option<Type>& rhs): Option<Type>::Option(rhs) {}
@@ -249,12 +266,12 @@ SquareRootPayoff<Type>::~SquareRootPayoff() {}
 template <typename Type>
 Type SquareRootPayoff<Type>::operator()(Type& spot) const {
     switch (this->get_its_type()) {
-    case 'c':
-        return sqrt(std::max(spot - this->get_strike(), 0.));
-    case 'p':
-        return sqrt(std::max(this->get_strike() - spot, 0.));
-    default:
-        throw("Unknown option type");
+        case 'c':
+            return sqrt(std::max(spot - this->get_strike(), 0.));
+        case 'p':
+            return sqrt(std::max(this->get_strike() - spot, 0.));
+        default:
+            throw("Unknown option type");
     };
 }
 

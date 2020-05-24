@@ -16,10 +16,10 @@ class VolatilityFunction {
         VolatilityFunction() {}
         virtual ~VolatilityFunction() {}
         virtual int get_steps() const = 0;
-        virtual std::vector<std::pair<Type,Type> > get_function() const = 0;
-        virtual std::vector<std::pair<Type,Type> > get_dt() const = 0;
-        virtual std::vector<Type> get_dt_vec() const = 0;
-        virtual std::vector<Type> get_vol_vec() const = 0;       
+        virtual const std::vector<std::pair<Type,Type> >& get_function() const = 0;
+        virtual const std::vector<std::pair<Type,Type> >& get_dt() const = 0;
+        virtual const std::vector<Type>& get_dt_vec() const = 0;
+        virtual const std::vector<Type>& get_vol_vec() const = 0;       
         virtual Type operator() (const Type& t) const = 0;
         virtual std::pair<Type,Type> operator[] (const unsigned int& _step) const = 0;
 };
@@ -41,10 +41,10 @@ class StepwiseVolatility: public VolatilityFunction<Type> {
         virtual ~StepwiseVolatility();
 
         int get_steps() const;
-        std::vector<std::pair<Type,Type> > get_function() const;
-        std::vector<std::pair<Type,Type> > get_dt() const;
-        std::vector<Type> get_dt_vec() const;
-        std::vector<Type> get_vol_vec() const;
+        const std::vector<std::pair<Type,Type> >& get_function() const;
+        const std::vector<std::pair<Type,Type> >& get_dt() const;
+        const std::vector<Type>& get_dt_vec() const;
+        const std::vector<Type>& get_vol_vec() const;
 
         StepwiseVolatility<Type>& operator= (const StepwiseVolatility<Type>& rhs);
         StepwiseVolatility<Type>& operator= (std::vector<std::pair<Type,Type> >& _vols);
@@ -97,22 +97,22 @@ int StepwiseVolatility<Type>::get_steps() const {
 }
 
 template <typename Type>
-std::vector<std::pair<Type,Type> > StepwiseVolatility<Type>::get_function() const {
+const std::vector<std::pair<Type,Type> >& StepwiseVolatility<Type>::get_function() const {
     return vol_func;
 }
 
 template <typename Type>
-std::vector<std::pair<Type,Type> > StepwiseVolatility<Type>::get_dt() const {
+const std::vector<std::pair<Type,Type> >& StepwiseVolatility<Type>::get_dt() const {
     return dt_func;
 }
 
 template <typename Type>
-std::vector<Type> StepwiseVolatility<Type>::get_dt_vec() const {
+const std::vector<Type>& StepwiseVolatility<Type>::get_dt_vec() const {
     return dt_vec;
 }
 
 template <typename Type>
-std::vector<Type> StepwiseVolatility<Type>::get_vol_vec() const {
+const std::vector<Type>& StepwiseVolatility<Type>::get_vol_vec() const {
     return vol_vec;
 }
 

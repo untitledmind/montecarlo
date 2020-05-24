@@ -5,6 +5,7 @@ template <typename Type> class Simulator;
 
 #include "random.hpp"
 #include "../Option/option.hpp"
+#include "../Pricers/blackscholes.hpp"
 #include <iostream>
 #include <iomanip>
 #include <vector>
@@ -13,7 +14,7 @@ template <typename Type> class Simulator;
 template <typename Type = double>
 class Simulator {
     private:
-        Type price;
+        Type bsm_price;
         Type diff;
         unsigned int seed;
         unsigned int iters;
@@ -29,7 +30,6 @@ class Simulator {
         Simulator();
         Simulator(Option<Type>& rhs, RandomGenerator<Type>& random_, std::vector<unsigned long>& num_paths_, unsigned int& _iters, unsigned int& _seed);
         virtual ~Simulator();
-        void black_scholes();
         std::vector<Type> monte_carlo(unsigned long& num_paths_) const;
         void run_monte_carlo();
         std::vector<Type> monte_carlo_var_vol(unsigned long& num_paths_) const;
@@ -44,13 +44,9 @@ template <typename Type>
 Simulator<Type>::Simulator(Option<Type>& _option, RandomGenerator<Type>& random_, std::vector<unsigned long>& num_paths_, unsigned int& _iters, unsigned int& _seed):
     option(&_option), random(&random_), num_paths(num_paths_), iters(_iters), seed(_seed) {
         srand(seed);
+        BlackScholes<Type> bsm(_option);
+        bsm_price = bsm.run();
     }
-
-// template <typename Type>
-// Simulator<Type>::Simulator(Option<Type>& _option, StepwiseVolatility<Type>& _vol_func, RandomGenerator<Type>& random_, std::vector<unsigned long>& num_paths_, unsigned int& _iters, unsigned int& _seed):
-//     option(&_option), vol_func(&_vol_func), random(&random_), num_paths(num_paths_), iters(_iters), seed(_seed) {
-//         srand(seed);
-//     }
 
 template <typename Type>
 Simulator<Type>::~Simulator() {}
@@ -122,7 +118,7 @@ void Simulator<Type>::run_monte_carlo() {
             Type sterr = results[2];
 
             std::cout << std::setw(10);
-            diff = mean - price;
+            diff = mean - bsm_price;
             std::cout << "Num paths = " << monte_num_paths[j] << '\t' << "Option price = " << mean << "\tdiff = " << diff << "\tstdev = " << stdev << "\tsterr = " << sterr << '\n';
             monte_num_paths[j] *= 2;
 
@@ -150,9 +146,9 @@ std::vector<Type> Simulator<Type>::monte_carlo_var_vol(unsigned long& num_paths_
     Type sterr;
     
     // get volatility function data before entering the loop to reduce overhead
-    std::vector<Type> dt_vec = option->get_vol_func()->get_dt_vec();
-    std::vector<Type> vol_vec = option->get_vol_func()->get_vol_vec();
-    int steps = option->get_vol_func()->get_steps();
+    std::vector<Type> dt_vec = option->get_vol_func().get_dt_vec();
+    std::vector<Type> vol_vec = option->get_vol_func().get_vol_vec();
+    int steps = option->get_vol_func().get_steps();
 
     for (unsigned long i=0; i < num_paths_; ++i) {
         Type this_spot = option->get_spot();
@@ -215,7 +211,7 @@ void Simulator<Type>::run_monte_carlo_var_vol() {
             Type sterr = results[2];
 
             std::cout << std::setw(10);
-            diff = mean - price;
+            diff = mean - bsm_price;
             std::cout << "Num paths = " << monte_num_paths[j] << '\t' << "Option price = " << mean << "\tdiff = " << diff << "\tstdev = " << stdev << "\tsterr = " << sterr << '\n';
             monte_num_paths[j] *= 2;
 
